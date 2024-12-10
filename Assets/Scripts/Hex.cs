@@ -1,84 +1,103 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnknownPlanet;
+using System.Collections.Generic; // Add this line
 
-public class Hex : MonoBehaviour
+namespace UnknownPlanet
 {
-    public float noiseValue;
-    private SpriteRenderer spriteRenderer;
-    private Color originalColor;
-    public Color selectedColor = Color.red; // Color for the selected border
-    private static Hex selectedHex; // Static reference to the currently selected hex
-
-    void Start()
+    public class Hex : MonoBehaviour
     {
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
-        {
-            originalColor = spriteRenderer.color;
-        }
+        public Vector2Int coordinates;
+        public BiomeType biomeType { get; private set; }
+        private float noiseValue;
+        private ConstructionManager constructionManager;
+        private static Hex selectedHex;
 
-        // Ensure the GameObject has a Collider2D component
-        if (GetComponent<Collider2D>() == null)
+        void Start()
         {
-            gameObject.AddComponent<BoxCollider2D>();
-        }
-    }
-
-    public void Initialize(float noiseValue)
-    {
-        this.noiseValue = noiseValue;
-        // Customize the hex based on noiseValue (e.g., change color or type)
-    }
-
-    void Update()
-    {
-        // Handle touch input for mobile
-        if (Input.touchCount > 0)
-        {
-            Touch touch = Input.GetTouch(0);
-            if (touch.phase == TouchPhase.Began)
+            if (GetComponent<Collider2D>() == null)
             {
-                Vector3 touchPosition = Camera.main.ScreenToWorldPoint(touch.position);
-                RaycastHit2D hit = Physics2D.Raycast(touchPosition, Vector2.zero);
-                if (hit.collider != null && hit.collider.gameObject == gameObject)
+                gameObject.AddComponent<BoxCollider2D>();
+            }
+
+            constructionManager = FindObjectOfType<ConstructionManager>();
+        }
+
+        public void Initialize(float height, float latitude)
+        {
+            this.noiseValue = height;
+            biomeType = DetermineBiome(height, latitude);
+            Debug.Log($"Hex ({coordinates.x}, {coordinates.y}): Bioma={biomeType}, Altura={height:F2}, Latitude={latitude:F2}");
+        }
+
+        private BiomeType DetermineBiome(float height, float latitude)
+        {
+            if (height < 0.3f) return BiomeType.Ocean;
+
+            float temperature = 1.0f - latitude; // 0 = frio (polos), 1 = quente (equador)
+
+            if (height > 0.8f || latitude > 0.8f)
+                return BiomeType.Snow;
+            if (height > 0.6f)
+                return BiomeType.Mountain;
+            if (temperature > 0.7f)
+                return BiomeType.Desert;
+            if (temperature > 0.3f && height > 0.4f)
+                return BiomeType.Forest;
+
+            return BiomeType.Plains;
+        }
+
+        void Update()
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (EventSystem.current.IsPointerOverGameObject())
+                {
+                    return;
+                }
+
+                Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
+
+                Collider2D hitCollider = Physics2D.OverlapPoint(mousePos2D);
+                if (hitCollider != null && hitCollider.gameObject == gameObject)
                 {
                     OnTouchDown();
                 }
             }
         }
 
-        // Handle mouse input for testing in the editor
-        if (Input.GetMouseButtonDown(0))
+        private void OnTouchDown()
         {
-            Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            RaycastHit2D hit = Physics2D.Raycast(mousePosition, Vector2.zero);
-            if (hit.collider != null && hit.collider.gameObject == gameObject)
+            Debug.Log($"Hex selecionado em ({coordinates.x}, {coordinates.y}):\n" +
+                     $"- Bioma: {biomeType}\n" +
+                     $"- Altura: {noiseValue:F2}");
+
+            if (constructionManager == null)
             {
-                OnTouchDown();
+                constructionManager = FindObjectOfType<ConstructionManager>();
+                if (constructionManager == null) return;
             }
-        }
-    }
 
-    private void OnTouchDown()
-    {
-        // Handle hex touch
-        Debug.Log("Hex touched! Noise value: " + noiseValue + "; Coordinates: (" + transform.position.x + ", " + transform.position.y + ")");
-        if (selectedHex != null && selectedHex != this)
-        {
-            selectedHex.Deselect();
-        }
-        selectedHex = this;
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.color = selectedColor; // Change the border color to indicate selection
-        }
-    }
+            if (selectedHex != null && selectedHex != this)
+            {
+                selectedHex.Deselect();
+            }
 
-    private void Deselect()
-    {
-        // Reset the color when the hex is deselected
-        if (spriteRenderer != null)
+            selectedHex = this;
+            // constructionManager.OnHexSelected(this, coordinates);
+        }
+
+        private void Deselect()
         {
-            spriteRenderer.color = originalColor;
+            selectedHex = null;
+        }
+
+        public BiomeType GetBiome()
+        {
+            Debug.Log($"Hex ({coordinates.x}, {coordinates.y}): {biomeType}");
+            return biomeType;
         }
     }
 }
