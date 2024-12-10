@@ -155,6 +155,11 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] [Range(0f, 1f)] private float snowHeight = 0.85f;
     [SerializeField] [Range(0f, 0.5f)] private float polarRegionSize = 0.25f;
 
+    [Header("Texture Optimization")]
+    [SerializeField] private bool useCompression = true;
+    [SerializeField] [Range(1, 8)] private int textureDownscale = 1;
+    [SerializeField] private FilterMode textureFilterMode = FilterMode.Point;
+
     private class VoronoiPoint
     {
         public Vector2 position;
@@ -645,56 +650,75 @@ public class MapGenerator : MonoBehaviour
                 return;
             }
 
-            int textureWidth = Mathf.Max(1, width * pixelSize);
-            int textureHeight = Mathf.Max(1, height * pixelSize);
+            // Calculate actual texture dimensions with downscaling
+            int textureWidth = Mathf.Max(1, (width * pixelSize) / textureDownscale);
+            int textureHeight = Mathf.Max(1, (height * pixelSize) / textureDownscale);
 
-            landTexture = new Texture2D(textureWidth, textureHeight);
-            waterTexture = new Texture2D(textureWidth, textureHeight);
+            // Create textures with optimized format
+            if (landTexture != null) DestroyImmediate(landTexture);
+            if (waterTexture != null) DestroyImmediate(waterTexture);
 
-            for (int x = 0; x < width; x++)
+            landTexture = new Texture2D(textureWidth, textureHeight, 
+                TextureFormat.RGB24,
+                false);
+            waterTexture = new Texture2D(textureWidth, textureHeight, 
+                TextureFormat.RGB24,
+                false);
+
+            landTexture.filterMode = textureFilterMode;
+            waterTexture.filterMode = textureFilterMode;
+
+            Color[] landPixels = new Color[textureWidth * textureHeight];
+            Color[] waterPixels = new Color[textureWidth * textureHeight];
+
+            // Corrigido o loop e o cálculo de índices
+            for (int y = 0; y < textureHeight; y++)
             {
-                for (int y = 0; y < height; y++)
+                for (int x = 0; x < textureWidth; x++)
                 {
-                    Color terrainColor = GetTerrainColor(x, y);
-                    Color waterCol = GetWaterColor(x, y);
+                    // Mapear coordenadas da textura para coordenadas do mapa
+                    int mapX = (x * textureDownscale) / pixelSize;
+                    int mapY = (y * textureDownscale) / pixelSize;
+                    
+                    // Garantir que estamos dentro dos limites do mapa
+                    mapX = Mathf.Clamp(mapX, 0, width - 1);
+                    mapY = Mathf.Clamp(mapY, 0, height - 1);
 
-                    FillTextureRegion(landTexture, x * pixelSize, y * pixelSize, pixelSize, terrainColor);
-                    FillTextureRegion(waterTexture, x * pixelSize, y * pixelSize, pixelSize, waterCol);
+                    Color terrainColor = GetTerrainColor(mapX, mapY);
+                    Color waterCol = GetWaterColor(mapX, mapY);
+
+                    int pixelIndex = y * textureWidth + x;
+                    landPixels[pixelIndex] = terrainColor;
+                    waterPixels[pixelIndex] = waterCol;
                 }
+            }
+
+            landTexture.SetPixels(landPixels);
+            waterTexture.SetPixels(waterPixels);
+
+            if (useCompression)
+            {
+                landTexture.Compress(true);
+                waterTexture.Compress(true);
             }
 
             landTexture.Apply();
             waterTexture.Apply();
 
-            if (landRenderer != null && waterRenderer != null)
-            {
-                landRenderer.sprite = Sprite.Create(landTexture, 
-                    new Rect(0, 0, textureWidth, textureHeight), 
-                    new Vector2(0.5f, 0.5f));
-                waterRenderer.sprite = Sprite.Create(waterTexture, 
-                    new Rect(0, 0, textureWidth, textureHeight), 
-                    new Vector2(0.5f, 0.5f));
+            landRenderer.sprite = Sprite.Create(landTexture, 
+                new Rect(0, 0, textureWidth, textureHeight), 
+                new Vector2(0.5f, 0.5f));
+            waterRenderer.sprite = Sprite.Create(waterTexture, 
+                new Rect(0, 0, textureWidth, textureHeight), 
+                new Vector2(0.5f, 0.5f));
 
-                // Gerar biomask apenas se o renderer estiver disponível
-                if (biomeMaskRenderer != null)
-                {
-                    GenerateBiomeMask();
-                }
+            if (biomeMaskRenderer != null)
+            {
+                GenerateBiomeMask();
             }
 
         } catch (System.Exception e) {
             Debug.LogError($"[MapGenerator] Error in DrawNoiseMap: {e.Message}");
-        }
-    }
-
-    private void FillTextureRegion(Texture2D texture, int startX, int startY, int size, Color color)
-    {
-        for (int i = 0; i < size; i++)
-        {
-            for (int j = 0; j < size; j++)
-            {
-                texture.SetPixel(startX + i, startY + j, color);
-            }
         }
     }
 
@@ -738,6 +762,20 @@ public class MapGenerator : MonoBehaviour
         } catch (System.Exception e) {
             Debug.LogError($"[MapGenerator] Error in GetWaterColor: {e.Message}");
             return Color.black;
+        }
+    }
+
+    private void FillTextureRegion(Texture2D texture, int startX, int startY, int size, Color color)
+    {
+        int maxX = Mathf.Min(startX + size, texture.width);
+        int maxY = Mathf.Min(startY + size, texture.height);
+        
+        for (int x = startX; x < maxX; x++)
+        {
+            for (int y = startY; y < maxY; y++)
+            {
+                texture.SetPixel(x, y, color);
+            }
         }
     }
 }
