@@ -62,11 +62,19 @@ namespace UnknownPlanet
             }
 
             constructionManager.CreateConstruction(nameInput.text, type, coordinates);
+            constructionManager.CloseConstructionUI();  // Usar o novo método
         }
 
         private void OnCancelClicked()
         {
-            Destroy(gameObject);
+            if (constructionManager != null)
+            {
+                constructionManager.CloseConstructionUI();
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
 
         private void ShowError(string message)

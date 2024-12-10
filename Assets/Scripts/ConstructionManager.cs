@@ -24,6 +24,15 @@ namespace UnknownPlanet
         [Header("Map Generator Reference")]
         [SerializeField] private MapGenerator mapGenerator;
 
+        [Header("Camera Control")]
+        [SerializeField] private CameraController cameraController;  // Adicione esta referência
+
+        [Header("Building Prefabs")]
+        [SerializeField] private GameObject cityPrefab;
+        [SerializeField] private GameObject villagePrefab;
+        [SerializeField] private GameObject farmPrefab;
+        [SerializeField] private GameObject minePrefab;
+
         private GameObject activeUI;
 
         void Start()
@@ -57,6 +66,11 @@ namespace UnknownPlanet
                     enabled = false;
                     return;
                 }
+            }
+
+            if (cameraController == null)
+            {
+                cameraController = FindObjectOfType<CameraController>();
             }
 
             // Configure Canvas settings with higher sorting order
@@ -315,42 +329,82 @@ namespace UnknownPlanet
                 Debug.LogError("No ConstructionUI component found in prefab hierarchy!");
                 Destroy(activeUI);
             }
+
+            if (cameraController != null)
+            {
+                cameraController.enabled = false;
+                cameraController.ResetDragState(); // Adicione esta linha
+            }
+        }
+
+        public void CloseConstructionUI()
+        {
+            if (activeUI != null)
+            {
+                Destroy(activeUI);
+            }
+            
+            if (cameraController != null)
+            {
+                cameraController.enabled = true;
+                cameraController.ResetDragState(); // Adicione esta linha
+            }
+        }
+
+        private GameObject GetPrefabForType(BuildingType type)
+        {
+            return type switch
+            {
+                BuildingType.City => cityPrefab,
+                BuildingType.Village => villagePrefab,
+                BuildingType.Farm => farmPrefab,
+                BuildingType.Mine => minePrefab,
+                _ => null
+            };
         }
 
         public void CreateConstruction(string name, BuildingType type, Vector2Int coordinates)
         {
-            if (constructions.Exists(c => c.coordinates == coordinates))
+            // Verificações básicas
+            if (string.IsNullOrEmpty(name))
             {
-                Debug.LogWarning($"Construction already exists at coordinates {coordinates}");
+                Debug.LogWarning("Construction name cannot be empty");
                 return;
             }
 
             if (!CanBuildAt(type, coordinates))
             {
-                Debug.LogWarning($"Cannot build {type} here - too close to another {type}");
-                return;
+                return; // CanBuildAt já loga o erro
             }
 
+            // Criar a construção
             var construction = new Construction
             {
                 name = name,
                 type = type,
-                coordinates = coordinates
+                coordinates = coordinates,
+                visualPrefab = GetPrefabForType(type)
             };
 
-            // Create visual representation under the parent
+            // Criar representação visual
             if (construction.visualPrefab != null)
             {
                 var visual = Instantiate(construction.visualPrefab, constructionParent);
                 visual.transform.position = new Vector3(coordinates.x, coordinates.y, -1);
+                
+                // Adicionar componente para identificação
+                var identifier = visual.AddComponent<ConstructionIdentifier>();
+                identifier.Initialize(construction);
+            }
+            else
+            {
+                Debug.LogWarning($"No prefab found for {type}");
             }
 
             constructions.Add(construction);
+            Debug.Log($"Created {type} named {name} at {coordinates}");
 
-            if (activeUI != null)
-            {
-                Destroy(activeUI);
-            }
+            CloseConstructionUI();
         }
 
         public Construction GetConstructionAt(Vector2Int coordinates)
@@ -362,17 +416,28 @@ namespace UnknownPlanet
         {
             var data = type.GetData();
             
-            // Verificar bioma
-            Color biomeColor = GetBiomeColorAtPosition(new Vector2(coordinates.x, coordinates.y));
-            BiomeType biome = DetermineBiomeFromColor(biomeColor);
-            
-            if (!data.allowedBiomes.Contains(biome))
+            // 1. Verificar se está na água
+            BiomeType biome = mapGenerator.GetBiomeAt(coordinates.x, coordinates.y);
+            if (biome == BiomeType.Ocean)
             {
-                Debug.LogWarning($"Cannot build {type} on {biome} biome");
+                Debug.Log("Cannot build on water");
                 return false;
             }
 
-            // Verificar construções próximas usando distância euclidiana
+            // 2. Verificar biomas permitidos
+            if (!data.allowedBiomes.Contains(biome))
+            {
+                Debug.Log($"Cannot build {type} on {biome} biome");
+                return false;
+            }
+
+            // 3. Se não houver construções, permitir construir
+            if (constructions.Count == 0)
+            {
+                return true;
+            }
+
+            // 4. Verificar distância apenas de construções do mesmo tipo
             foreach (var construction in constructions)
             {
                 if (construction.type == type)
@@ -382,9 +447,11 @@ namespace UnknownPlanet
                         new Vector2(construction.coordinates.x, construction.coordinates.y)
                     );
                     
-                    if (distance <= data.exclusionRange)
+                    Debug.Log($"Distance to nearest {type}: {distance}");
+                    
+                    if (distance < data.exclusionRange)
                     {
-                        Debug.LogWarning($"Too close to another {type} (distance: {distance:F2})");
+                        Debug.Log($"Too close to another {type}");
                         return false;
                     }
                 }
@@ -435,7 +502,7 @@ namespace UnknownPlanet
                 Debug.Log("Detected: Ocean");
                 return BiomeType.Ocean;
             }
-            if (color.r > 0.9f && color.g > 0.9f && color.b > 0.9f)
+            if (color.r > 0.9f && color.g > 9f && color.b > 0.9f)
             {
                 Debug.Log("Detected: Snow");
                 return BiomeType.Snow;

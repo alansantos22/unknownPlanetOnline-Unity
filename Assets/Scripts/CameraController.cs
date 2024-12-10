@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class CameraController : MonoBehaviour
 {
@@ -66,8 +67,19 @@ public class CameraController : MonoBehaviour
         transform.Translate(moveDirection.normalized * moveSpeed * Time.deltaTime, Space.World);
     }
 
+    public void ResetDragState()
+    {
+        isDragging = false;
+    }
+
     private void HandleMouseDrag()
     {
+        if (EventSystem.current.IsPointerOverGameObject())
+        {
+            isDragging = false;
+            return;
+        }
+
         // Handle touch input for mobile and mouse drag for desktop
         if (Input.GetMouseButtonDown(0))
         {

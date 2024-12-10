@@ -57,10 +57,10 @@ namespace UnknownPlanet
 
         private static int GetExclusionRange(BuildingType type) => type switch
         {
-            BuildingType.City => 5,      // Reduzido de 10 para 5
-            BuildingType.Village => 3,   // Reduzido de 5 para 3
-            BuildingType.Farm => 1,      // Reduzido de 2 para 1
-            BuildingType.Mine => 2,      // Reduzido de 3 para 2
+            BuildingType.City => 3,    // Reduzido
+            BuildingType.Village => 2, // Reduzido
+            BuildingType.Farm => 1,    // Reduzido
+            BuildingType.Mine => 1,    // Reduzido
             _ => 0
         };
 
@@ -75,7 +75,7 @@ namespace UnknownPlanet
 
         private static BiomeType[] GetAllowedBiomes(BuildingType type) => type switch
         {
-            BuildingType.City => new[] { BiomeType.Plains, BiomeType.Cerrado },
+            BuildingType.City => new[] { BiomeType.Plains, BiomeType.Cerrado, BiomeType.Tundra },
             BuildingType.Village => new[] { BiomeType.Plains, BiomeType.Forest, BiomeType.DenseForest, BiomeType.Cerrado },
             BuildingType.Farm => new[] { BiomeType.Plains, BiomeType.Cerrado },
             BuildingType.Mine => new[] { BiomeType.Mountain },
