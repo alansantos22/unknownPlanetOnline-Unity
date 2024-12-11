@@ -27,7 +27,7 @@ namespace UnknownPlanet
 
         void OnMouseDown()
         {
-            if (!EventSystem.current.IsPointerOverGameObject())
+            if (!EventSystem.current.IsPointerOverGameObject() && constructionData != null)
             {
                 Debug.Log($"Clicked on {constructionData.name} ({constructionData.type})");
                 // Aqui você pode adicionar lógica para mostrar informações da construção

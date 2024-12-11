@@ -24,10 +24,10 @@ public class FogOfWarManager : MonoBehaviour
     [SerializeField] private float explorationRadius = 5f;
     
     [Tooltip("Raio de visão do player")]
-    [SerializeField] private float playerRevealRadius = 3f;
+    [SerializeField] private float playerRevealRadius = 0.25f;
     
     [Tooltip("Raio de revelação ao descobrir uma cidade")]
-    [SerializeField] private float cityRevealRadius = 8f;
+    [SerializeField] private float cityRevealRadius = 1f;
     
     [Tooltip("Transform do player para acompanhamento automático")]
     [SerializeField] private Transform playerTransform;
@@ -87,7 +87,6 @@ public class FogOfWarManager : MonoBehaviour
 
         playerTransform = player;
         RevealArea(player.position, playerRevealRadius, false);
-        Debug.Log($"FogOfWar initialized at player position: {player.position}");
         enabled = true;
     }
 
@@ -266,12 +265,12 @@ public class FogOfWarManager : MonoBehaviour
             (relativePos.x + spriteSize.x * 0.5f) * scaleX,
             (relativePos.y + spriteSize.y * 0.5f) * scaleY
         );
+    }
 
-        if (Debug.isDebugBuild)
-        {
-            Debug.Log($"World Pos: {worldPos}, Fog Origin: {fogOrigin}");
-            Debug.Log($"Relative Pos: {relativePos}, Texture Pos: {texturePos}");
-        }
+    // Add this method near the other public methods
+    public float GetCityRevealRadius()
+    {
+        return cityRevealRadius;
     }
 }
 
