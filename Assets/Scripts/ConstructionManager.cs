@@ -12,6 +12,7 @@ namespace UnknownPlanet
         [SerializeField] private GameObject constructionUIPrefab;
         [SerializeField] private Canvas gameCanvas;
         [SerializeField] private Transform constructionParent;
+        [SerializeField] private GameObject player; // Adicione esta linha
 
         [Header("Map References")]
         [SerializeField] private SpriteRenderer biomeMapRenderer;
@@ -33,10 +34,41 @@ namespace UnknownPlanet
         [SerializeField] private GameObject farmPrefab;
         [SerializeField] private GameObject minePrefab;
 
+        [SerializeField] private FogOfWarManager fogOfWar;
+
         private GameObject activeUI;
 
         void Start()
         {
+            // Try to find Player if not assigned
+            if (player == null)
+            {
+                player = GameObject.FindGameObjectWithTag("Player");
+                if (player == null)
+                {
+                    Debug.LogError("Player não encontrado! Certifique-se de que seu player tem a tag 'Player'.");
+                    enabled = false; // Desabilitar o ConstructionManager se não encontrar o player
+                    return;
+                }
+                Debug.Log("Player encontrado automaticamente: " + player.name);
+            }
+
+            // Try to find FogOfWar if not assigned
+            if (fogOfWar == null)
+            {
+                fogOfWar = FindObjectOfType<FogOfWarManager>();
+                if (fogOfWar == null)
+                {
+                    Debug.LogError("FogOfWar não encontrado na cena!");
+                    enabled = false;
+                    return;
+                }
+                Debug.Log("FogOfWar encontrado automaticamente: " + fogOfWar.name);
+            }
+
+            // Inicializar FogOfWar com o player encontrado
+            fogOfWar.Initialize(player.transform);
+
             // Check for required components
             if (constructionUIPrefab == null)
             {
@@ -108,6 +140,18 @@ namespace UnknownPlanet
 
                 Debug.Log($"Setting biomeMapRenderer to layer {layerNumber}");
                 biomeMapRenderer.gameObject.layer = layerNumber;
+            }
+
+            // Initialize FogOfWar with found player
+            if (fogOfWar != null && player != null)
+            {
+                fogOfWar.Initialize(player.transform);
+                Debug.Log($"Initializing FogOfWar with player at {player.transform.position}");
+            }
+            else
+            {
+                if (player == null) Debug.LogError("Player reference is missing! Add the 'Player' tag to your player object.");
+                if (fogOfWar == null) Debug.LogError("FogOfWar reference is missing! Add FogOfWarManager to your scene.");
             }
         }
 
@@ -402,6 +446,12 @@ namespace UnknownPlanet
                 
                 var identifier = visual.AddComponent<ConstructionIdentifier>();
                 identifier.Initialize(construction);
+
+                // Reveal fog of war around new construction
+                if (fogOfWar != null)
+                {
+                    fogOfWar.RevealArea(new Vector2(mousePos.x, mousePos.y), 5f, true);
+                }
             }
             else
             {

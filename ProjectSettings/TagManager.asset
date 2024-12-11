@@ -11,11 +11,11 @@ TagManager:
   - 
   - Water
   - UI
-  - Bioma
-  - Water
   - Land
-  - 
-  - 
+  - Water
+  - Bioma
+  - Player
+  - FogOfWar
   - 
   - 
   - 
@@ -40,4 +40,19 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Land
+    uniqueID: 1472601045
+    locked: 0
+  - name: Water
+    uniqueID: 3574122619
+    locked: 0
+  - name: Bioma
+    uniqueID: 3891932719
+    locked: 0
+  - name: Player
+    uniqueID: 3582832707
+    locked: 0
+  - name: FogOfWar
+    uniqueID: 3920905779
     locked: 0
