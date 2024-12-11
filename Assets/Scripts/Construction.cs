@@ -76,7 +76,7 @@ namespace UnknownPlanet
         private static BiomeType[] GetAllowedBiomes(BuildingType type) => type switch
         {
             BuildingType.City => new[] { BiomeType.Plains, BiomeType.Cerrado, BiomeType.Tundra },
-            BuildingType.Village => new[] { BiomeType.Plains, BiomeType.Forest, BiomeType.DenseForest, BiomeType.Cerrado },
+            BuildingType.Village => new[] { BiomeType.Plains, BiomeType.Cerrado, BiomeType.Tundra },
             BuildingType.Farm => new[] { BiomeType.Plains, BiomeType.Cerrado },
             BuildingType.Mine => new[] { BiomeType.Mountain },
             _ => new BiomeType[] { }

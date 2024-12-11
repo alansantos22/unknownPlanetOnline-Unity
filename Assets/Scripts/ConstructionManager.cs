@@ -160,6 +160,7 @@ namespace UnknownPlanet
         }
 
         private Vector3 mousePos;
+        private BiomeType currentBiome; // Adicionar esta variável
 
         private void HandleMapClick()
         {
@@ -177,10 +178,10 @@ namespace UnknownPlanet
                     Mathf.FloorToInt(mapPosition.y)
                 );
 
-                BiomeType biome = DetermineBiomeFromMousePosition();
-                bool isWater = biome == BiomeType.Ocean;
+                currentBiome = DetermineBiomeFromMousePosition(); // Armazenar o bioma
+                bool isWater = currentBiome == BiomeType.Ocean;
 
-                Debug.Log($"Clicked on biome: {biome}");
+                Debug.Log($"Clicked on biome: {currentBiome}");
                 Debug.Log($"Terrain type: {(isWater ? "Water" : "Land")}");
 
                 OpenConstructionUI(gridPosition);
@@ -390,9 +391,15 @@ namespace UnknownPlanet
             if (construction.visualPrefab != null)
             {
                 var visual = Instantiate(construction.visualPrefab, constructionParent);
-                visual.transform.position = new Vector3(coordinates.x, coordinates.y, -1);
+                // Usar a posição do mousePos que foi salva durante o HandleMapClick
+                visual.transform.position = new Vector3(mousePos.x, mousePos.y, -1);
                 
-                // Adicionar componente para identificação
+                // Atualizar as coordenadas da construção para refletir a posição real
+                construction.coordinates = new Vector2Int(
+                    Mathf.RoundToInt(mousePos.x),
+                    Mathf.RoundToInt(mousePos.y)
+                );
+                
                 var identifier = visual.AddComponent<ConstructionIdentifier>();
                 identifier.Initialize(construction);
             }
@@ -416,18 +423,13 @@ namespace UnknownPlanet
         {
             var data = type.GetData();
             
-            // 1. Verificar se está na água
-            BiomeType biome = mapGenerator.GetBiomeAt(coordinates.x, coordinates.y);
-            if (biome == BiomeType.Ocean)
-            {
-                Debug.Log("Cannot build on water");
-                return false;
-            }
+            Debug.Log($"Attempting to build {type} on {currentBiome}"); // Usar o bioma armazenado
+            Debug.Log($"Allowed biomes: {string.Join(", ", data.allowedBiomes)}");
 
-            // 2. Verificar biomas permitidos
-            if (!data.allowedBiomes.Contains(biome))
+            // Verificar biomas permitidos usando o bioma armazenado
+            if (!data.allowedBiomes.Contains(currentBiome))
             {
-                Debug.Log($"Cannot build {type} on {biome} biome");
+                Debug.Log($"Cannot build {type} on {currentBiome} biome");
                 return false;
             }
 
@@ -443,7 +445,7 @@ namespace UnknownPlanet
                 if (construction.type == type)
                 {
                     float distance = Vector2.Distance(
-                        new Vector2(coordinates.x, coordinates.y),
+                        new Vector2(mousePos.x, mousePos.y), // Usar mousePos em vez de coordinates
                         new Vector2(construction.coordinates.x, construction.coordinates.y)
                     );
                     
