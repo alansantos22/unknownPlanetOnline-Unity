@@ -1,138 +1,54 @@
 using UnityEngine;
 using LibNoise;
 using LibNoise.Generator;
-using LibNoise.Operator;
 using System.Collections.Generic;
 
 namespace UnknownPlanet
 {
     public class MapGenerator : MonoBehaviour
     {
-        [Header("Hex Grid")]
-        [SerializeField] private float hexScale = 0.5f;
+        [Header("Map Settings")]
+        [SerializeField] private int _width = 100;
+        [SerializeField] private int _height = 100;
+        [SerializeField] private float _noiseScale = 0.1f;
+        [SerializeField] private float _zoom = 100f;
+        [SerializeField] private int _seed = 0;
+        [SerializeField] private float _landProportion = 0.3f;
+        [SerializeField] private int _pixelSize = 1;
 
-        [Header("Configurações Básicas do Mapa")]
-        [Tooltip("Largura do mapa em pixels")]
-        [SerializeField]
-        private int _width = 100;  // Largura do mapa
-        public int width
-        {
-            get { return _width; }
-            set
-            {
-                _width = value;
-                GenerateNoiseMap();
-                DrawNoiseMap();
-            }
-        }
+        // Simple property getters/setters
+        public int width { get => _width; set { _width = value; UpdateMap(); } }
+        public int height { get => _height; set { _height = value; UpdateMap(); } }
+        public float noiseScale { get => _noiseScale; set { _noiseScale = value; UpdateMap(); } }
+        public float zoom { get => _zoom; set { _zoom = value; UpdateMap(); } }
+        public int seed { get => _seed; set { _seed = value; UpdateMap(); } }
+        public float landProportion { get => _landProportion; set { _landProportion = value; UpdateMap(); } }
+        public int pixelSize { get => _pixelSize; set { UpdateMap(); } }
 
-        [Tooltip("Altura do mapa em pixels")]
-        [SerializeField]
-        private int _height = 100; // Altura do mapa
-        public int height
-        {
-            get { return _height; }
-            set
-            {
-                _height = value;
-                GenerateNoiseMap();
-                DrawNoiseMap();
-            }
-        }
-
-        [Tooltip("Escala do ruído para geração do terreno - Valores menores criam terrenos mais suaves")]
-        [SerializeField]
-        private float _noiseScale = 0.1f; // Escala do ruído para geração do terreno
-        public float noiseScale
-        {
-            get { return _noiseScale; }
-            set
-            {
-                _noiseScale = value;
-                GenerateNoiseMap();
-                DrawNoiseMap();
-            }
-        }
-        [SerializeField]
-        private float _zoom = 100f; // Nível de zoom do mapa
-        public float zoom
-        {
-            get { return _zoom; }
-            set
-            {
-                _zoom = value;
-                GenerateNoiseMap();
-                DrawNoiseMap();
-            }
-        }
-
-        [Tooltip("Semente para geração aleatória do mapa - O mesmo valor gera sempre o mesmo mapa")]
-        [SerializeField]
-        private int _seed = 0; // Semente para geração aleatória consistente
-        public int seed
-        {
-            get { return _seed; }
-            set
-            {
-                _seed = value;
-                GenerateNoiseMap();
-                DrawNoiseMap();
-            }
-        }
-
-        [Tooltip("Proporção entre terra e água (0-1) - Valores maiores criam mais terra")]
-        [SerializeField]
-        private float _landProportion = 0.3f; // Proporção entre terra e água
-        public float landProportion
-        {
-            get { return _landProportion; }
-            set
-            {
-                _landProportion = value;
-                DrawNoiseMap();
-            }
-        }
-
-        [Tooltip("Tamanho de cada pixel no mapa - Valores maiores deixam o mapa mais pixelado")]
-        [SerializeField]
-        private int _pixelSize = 1; // Tamanho de cada pixel no mapa
-        public int pixelSize
-        {
-            get { return _pixelSize; }
-            set
-            {
-                DrawNoiseMap();
-            }
-        }
-
-        [Header("Sistema de Temperatura e Umidade")]
+        [Header("Climate System")]
         [SerializeField] private float temperatureScale = 0.7f;
         [SerializeField] private float heightInfluence = 0.4f;
         private float[,] temperatureMap;
         private float[,] humidityMap;
 
-        [Header("Water Thresholds")]
+        [Header("Water Settings")]
         [SerializeField] [Range(0f, 1f)] private float deepWaterThreshold = 0.3f;
         [SerializeField] [Range(0f, 1f)] private float shallowWaterThreshold = 0.6f;
 
-        [Header("Base Colors")]
-        public Color landColor = Color.green;      // Cor padrão para terra
-        
-        [Header("Water Colors")]
-        public Color deepOceanColor = new Color(0.0f, 0.0f, 0.4f, 1f);    // Azul escuro
-        public Color oceanColor = new Color(0.0f, 0.0f, 0.7f, 1f);        // Azul médio
-        public Color shallowWaterColor = new Color(0.0f, 0.4f, 1f, 1f);   // Azul claro
-        public Color waterColor = Color.blue;      // Cor padrão para água
+        [Header("Colors")]
+        public Color landColor = Color.green;
+        public Color deepOceanColor = new Color(0.0f, 0.0f, 0.4f, 1f);
+        public Color oceanColor = new Color(0.0f, 0.0f, 0.7f, 1f);
+        public Color shallowWaterColor = new Color(0.0f, 0.4f, 1f, 1f);
+        public Color waterColor = new Color(0.0f, 0.0f, 0.8f, 1f); // Add this line
 
         [Header("References")]
-        public float[,] noiseMap;                  // Mapa de ruído para altura do terreno
-        public SpriteRenderer landRenderer;        // Renderizador para camada de terra
-        public SpriteRenderer waterRenderer;       // Renderizador para camada de água
-        public Texture2D landTexture;             // Textura para terra
-        public Texture2D waterTexture;            // Textura para água
-
-        [Header("Biome Mask")]
+        public float[,] noiseMap;
+        public SpriteRenderer landRenderer;
+        public SpriteRenderer waterRenderer;
         public SpriteRenderer biomeMaskRenderer;
+        private Texture2D landTexture;
+        private Texture2D waterTexture;
 
         [System.Serializable]
         public class BiomeSettings
@@ -150,7 +66,6 @@ namespace UnknownPlanet
 
         [Header("Biome System")]
         [SerializeField] public BiomeSettings[] biomes;
-        [SerializeField] [Range(-1f, 1f)] private float globalTemperature = 0f;
         [SerializeField] private int totalBiomePoints = 30;
 
         [Header("Biome Generation")]
@@ -172,7 +87,14 @@ namespace UnknownPlanet
         }
 
         private List<VoronoiPoint> voronoiPoints;
-        [SerializeField] private HexMapGenerator hexMapGenerator; // Add this line to declare hexMapGenerator
+
+        private void UpdateMap()
+        {
+            if (Application.isPlaying)
+                Invoke(nameof(GenerateMap), 0.1f);
+            else if (landRenderer != null && waterRenderer != null)
+                GenerateMap();
+        }
 
         void Awake() // Change Start to Awake to ensure noise map is generated before other scripts access it
         {
@@ -195,13 +117,7 @@ namespace UnknownPlanet
                 GenerateNoiseMap();
                 DrawNoiseMap();
                 
-                // Generate hex grid after biome map is ready
-                if (hexMapGenerator != null)
-                {
-                    int hexGridWidth = Mathf.FloorToInt(width * pixelSize / hexScale);
-                    int hexGridHeight = Mathf.FloorToInt(height * pixelSize / hexScale);
-                    hexMapGenerator.GenerateHexGrid(hexGridWidth, hexGridHeight, hexScale);
-                }
+                // Remove hex grid generation code
             }
             catch (System.Exception e)
             {
@@ -676,7 +592,7 @@ namespace UnknownPlanet
                     TextureFormat.RGB24,
                     false);
                 waterTexture = new Texture2D(textureWidth, textureHeight, 
-                    TextureFormat.RGB24,
+                    TextureFormat.RGBA32, // Mudado para RGBA32 para suportar transparência
                     false);
 
                 landTexture.filterMode = textureFilterMode;
@@ -758,39 +674,35 @@ namespace UnknownPlanet
         {
             try {
                 if (noiseMap == null || x < 0 || x >= width || y < 0 || y >= height)
-                    return Color.black;
+                    return Color.clear; // Usar clear ao invés de black
 
                 float heightValue = noiseMap[x, y];
                 if (heightValue > landProportion)
-                    return new Color(0, 0, 0, 0);
+                    return Color.clear; // Área sem água deve ser transparente
 
                 // Prevent division by zero
                 float oceanDepth = landProportion != 0 ? heightValue / landProportion : 0;
 
                 if (oceanDepth < deepWaterThreshold)
-                    return deepOceanColor;
+                    return new Color(deepOceanColor.r, deepOceanColor.g, deepOceanColor.b, 1f);
                 if (oceanDepth < shallowWaterThreshold)
-                    return oceanColor;
-                return shallowWaterColor;
+                    return new Color(oceanColor.r, oceanColor.g, oceanColor.b, 1f);
+                return new Color(shallowWaterColor.r, shallowWaterColor.g, shallowWaterColor.b, 1f);
 
             } catch (System.Exception e) {
                 Debug.LogError($"[MapGenerator] Error in GetWaterColor: {e.Message}");
-                return Color.black;
+                return Color.clear; // Usar clear ao invés de black
             }
         }
 
         private void FillTextureRegion(Texture2D texture, int startX, int startY, int size, Color color)
         {
-            int maxX = Mathf.Min(startX + size, texture.width);
-            int maxY = Mathf.Min(startY + size, texture.height);
-            
-            for (int x = startX; x < maxX; x++)
-            {
-                for (int y = startY; y < maxY; y++)
-                {
-                    texture.SetPixel(x, y, color);
-                }
-            }
+            Color32[] colors = new Color32[size * size];
+            Color32 col32 = color;
+            for (int i = 0; i < colors.Length; i++)
+                colors[i] = col32;
+
+            texture.SetPixels32(startX, startY, size, size, colors);
         }
 
         public Color GetColorAt(int x, int y)
