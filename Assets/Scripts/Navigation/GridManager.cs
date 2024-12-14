@@ -7,112 +7,34 @@ namespace UnknownPlanet.Navigation
     public class GridManager : MonoBehaviour
     {
         [Header("Grid Settings")]
-        [SerializeField]
-        [Tooltip("Distância entre os pontos da malha")]
-        private float gridSpacing = 0.25f; // Reduzido para maior precisão
-
-        [SerializeField]
-        [Tooltip("Margem de segurança para bordas e obstáculos")]
-        private float safetyMargin = 0.3f;
-
-        [SerializeField]
-        [Tooltip("Camada que representa áreas onde é possível andar")]
-        private GameObject walkableArea;
-
-        [SerializeField]
-        [Tooltip("Objetos que representam obstáculos")]
-        private GameObject[] obstacles;
+        [SerializeField] private float gridSpacing = 0.25f;
+        [SerializeField] private float safetyMargin = 0.3f;
+        [SerializeField] private GameObject walkableArea;
+        [SerializeField] private GameObject[] obstacles;
 
         [Header("Debug")]
-        [SerializeField]
-        [Tooltip("Mostrar grid de navegação")]
-        private bool showGrid = true;
-
-        [SerializeField]
-        [Tooltip("Cor dos pontos navegáveis")]
-        private Color walkableColor = new Color(0, 1, 0, 0.3f);
+        [SerializeField] private bool showGrid = true;
+        [SerializeField] private Color walkableColor = new Color(0, 1, 0, 0.3f);
 
         [Header("Grid Data")]
-        [SerializeField]
-        [Tooltip("Dados pré-calculados da malha de navegação")]
-        private GridData gridData;
-
-        [SerializeField]
-        [Tooltip("Modo de edição para gerar nova malha")]
-        private bool editMode = false;
+        [SerializeField] private GridData gridData;
+        [SerializeField] private bool editMode = false;
 
         [Header("Visualization")]
-        [SerializeField]
-        [Tooltip("Mostra os nós da malha de navegação durante o jogo")]
-        private bool showNodesInGame = false;
-
-        [SerializeField]
-        [Tooltip("Mostra as conexões entre os nós durante o jogo")]
-        private bool showConnectionsInGame = false;
-
-        [SerializeField]
-        [Tooltip("Cor dos nós da malha de navegação")]
-        private Color nodeColor = new Color(0, 1, 0, 0.5f);
-
-        [SerializeField]
-        [Tooltip("Cor das conexões entre os nós")]
-        private Color connectionColor = new Color(0, 0.5f, 0, 0.2f);
-
-        [SerializeField]
-        [Tooltip("Tamanho base dos nós (será ajustado pelo sistema de escala)")]
-        private float nodeSize = 0.1f;
-
-        [SerializeField]
-        [Tooltip("Mostra a linha do caminho encontrado")]
-        private bool showPathLine = true;
-
-        [SerializeField]
-        [Tooltip("Cor do caminho encontrado")]
-        private Color pathColor = Color.yellow;
-
-        [SerializeField]
-        [Tooltip("Largura base da linha do caminho (será ajustada pelo sistema de escala)")]
-        private float pathLineWidth = 0.1f;
-
-        [Header("Debug Visualization")]
-        [SerializeField]
-        [Tooltip("Ativa a visualização de debug geral")]
-        private bool showDebugGrid = true;
-
-        [SerializeField]
-        [Tooltip("Mostra os nós da malha no modo debug")]
-        private bool showNodes = true;
-
-        [SerializeField]
-        [Tooltip("Mostra as conexões entre os nós no modo debug")]
-        private bool showConnections = true;
-
-        [SerializeField]
-        [Tooltip("Mostra as bordas da área navegável")]
-        private bool showBounds = true;
-
-        [SerializeField]
-        [Tooltip("Cor das bordas da área navegável")]
-        private Color boundsColor = new Color(1f, 1f, 0f, 0.3f);
-
-        [SerializeField]
-        [Tooltip("Largura base das conexões (será ajustada pelo sistema de escala)")]
-        private float connectionWidth = 0.05f;
+        [SerializeField] private Color nodeColor = new Color(0, 1, 0, 0.5f);
+        [SerializeField] private Color connectionColor = new Color(0, 0.5f, 0, 0.2f);
+        [SerializeField] private float nodeSize = 0.1f;
+        [SerializeField] private bool showPathLine = true;
+        [SerializeField] private Color pathColor = Color.yellow;
+        [SerializeField] private float pathLineWidth = 0.1f;
+        [SerializeField] private float connectionWidth = 0.05f;
 
         [Header("Size Adjustment")]
-         [SerializeField]
-        [Tooltip("Ativa o ajuste automático do tamanho dos elementos visuais baseado no tamanho do mapa")]
-        private bool autoAdjustSize = true;
+        [SerializeField] private bool autoAdjustSize = true;
+        [SerializeField] private float sizeMultiplier = 1f;
+        [SerializeField] private float referenceMapSize = 10f;
 
-        [SerializeField]
-        [Tooltip("Multiplicador geral para ajuste fino do tamanho dos elementos visuais")]
-        private float sizeMultiplier = 1f;
-
-        [SerializeField]
-        [Tooltip("Tamanho base do mapa considerado 'normal' (em unidades). Mapas menores terão elementos maiores e vice-versa")]
-        private float referenceMapSize = 10f; // Tamanho de referência para um mapa "normal"
         private float mapScaleFactor = 1f;
-
         private Dictionary<Vector2Int, NavigationNode> navigationGrid;
         private Bounds mapBounds;
         private LineRenderer pathVisualizer;
@@ -464,15 +386,15 @@ namespace UnknownPlanet.Navigation
 
         private void OnDrawGizmos()
         {
-            if (!showDebugGrid) return;
+            if (!showGrid) return;
 
             // Draw map bounds if available
-            if (showBounds && walkableArea != null)
+            if (walkableArea != null)
             {
                 var collider = walkableArea.GetComponent<Collider2D>();
                 if (collider != null)
                 {
-                    Gizmos.color = boundsColor;
+                    Gizmos.color = new Color(1f, 1f, 0f, 0.3f);
                     Gizmos.DrawWireCube(collider.bounds.center, collider.bounds.size);
                 }
             }
@@ -485,32 +407,26 @@ namespace UnknownPlanet.Navigation
             // Draw nodes and connections
             foreach (var node in navigationGrid.Values)
             {
-                if (showNodes)
-                {
-                    Gizmos.color = nodeColor;
-                    Gizmos.DrawSphere((Vector3)node.WorldPosition, adjustedNodeSize);
-                }
+                Gizmos.color = nodeColor;
+                Gizmos.DrawSphere((Vector3)node.WorldPosition, adjustedNodeSize);
 
-                if (showConnections)
+                Gizmos.color = connectionColor;
+                foreach (var connection in node.Connections)
                 {
-                    Gizmos.color = connectionColor;
-                    foreach (var connection in node.Connections)
-                    {
-                        // Convert Vector2 to Vector3 for calculations
-                        Vector3 startPos = (Vector3)node.WorldPosition;
-                        Vector3 endPos = (Vector3)connection.WorldPosition;
-                        Vector3 direction = endPos - startPos;
-                        Vector3 perpendicular = Vector3.Cross(direction, Vector3.forward).normalized * adjustedConnectionWidth;
-                        
-                        Gizmos.DrawLine(
-                            startPos + perpendicular,
-                            endPos + perpendicular
-                        );
-                        Gizmos.DrawLine(
-                            startPos - perpendicular,
-                            endPos - perpendicular
-                        );
-                    }
+                    // Convert Vector2 to Vector3 for calculations
+                    Vector3 startPos = (Vector3)node.WorldPosition;
+                    Vector3 endPos = (Vector3)connection.WorldPosition;
+                    Vector3 direction = endPos - startPos;
+                    Vector3 perpendicular = Vector3.Cross(direction, Vector3.forward).normalized * adjustedConnectionWidth;
+                    
+                    Gizmos.DrawLine(
+                        startPos + perpendicular,
+                        endPos + perpendicular
+                    );
+                    Gizmos.DrawLine(
+                        startPos - perpendicular,
+                        endPos - perpendicular
+                    );
                 }
             }
 
