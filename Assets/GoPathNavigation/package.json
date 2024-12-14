@@ -1,0 +1,19 @@
+{
+  "name": "com.gopath.navigation",
+  "version": "1.0.0",
+  "displayName": "GoPath Navigation",
+  "description": "A 2D pathfinding system for Unity with dynamic obstacle avoidance",
+  "unity": "2021.3",
+  "dependencies": {},
+  "keywords": [
+    "pathfinding",
+    "navigation",
+    "2d",
+    "movement"
+  ],
+  "author": {
+    "name": "Unli Studios",
+    "email": "alanreis@unli.com.br",
+    "url": "https://unli.com.br"
+  }
+}

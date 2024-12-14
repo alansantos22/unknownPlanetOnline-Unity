@@ -1,0 +1,13 @@
+{
+    "name": "GoPath.Navigation",
+    "rootNamespace": "GoPath.Navigation",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}
