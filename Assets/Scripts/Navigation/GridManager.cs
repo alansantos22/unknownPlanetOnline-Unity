@@ -42,22 +42,76 @@ namespace UnknownPlanet.Navigation
         private bool editMode = false;
 
         [Header("Visualization")]
-        [SerializeField] private bool showNodesInGame = false;
-        [SerializeField] private bool showConnectionsInGame = false;
-        [SerializeField] private Color nodeColor = new Color(0, 1, 0, 0.5f);
-        [SerializeField] private Color connectionColor = new Color(0, 0.5f, 0, 0.2f);
-        [SerializeField] private float nodeSize = 0.1f;
-        [SerializeField] private bool showPathLine = true;
-        [SerializeField] private Color pathColor = Color.yellow;
-        [SerializeField] private float pathLineWidth = 0.1f;
+        [SerializeField]
+        [Tooltip("Mostra os nós da malha de navegação durante o jogo")]
+        private bool showNodesInGame = false;
+
+        [SerializeField]
+        [Tooltip("Mostra as conexões entre os nós durante o jogo")]
+        private bool showConnectionsInGame = false;
+
+        [SerializeField]
+        [Tooltip("Cor dos nós da malha de navegação")]
+        private Color nodeColor = new Color(0, 1, 0, 0.5f);
+
+        [SerializeField]
+        [Tooltip("Cor das conexões entre os nós")]
+        private Color connectionColor = new Color(0, 0.5f, 0, 0.2f);
+
+        [SerializeField]
+        [Tooltip("Tamanho base dos nós (será ajustado pelo sistema de escala)")]
+        private float nodeSize = 0.1f;
+
+        [SerializeField]
+        [Tooltip("Mostra a linha do caminho encontrado")]
+        private bool showPathLine = true;
+
+        [SerializeField]
+        [Tooltip("Cor do caminho encontrado")]
+        private Color pathColor = Color.yellow;
+
+        [SerializeField]
+        [Tooltip("Largura base da linha do caminho (será ajustada pelo sistema de escala)")]
+        private float pathLineWidth = 0.1f;
 
         [Header("Debug Visualization")]
-        [SerializeField] private bool showDebugGrid = true;
-        [SerializeField] private bool showNodes = true;
-        [SerializeField] private bool showConnections = true;
-        [SerializeField] private bool showBounds = true;
-        [SerializeField] private Color boundsColor = new Color(1f, 1f, 0f, 0.3f);
-        [SerializeField] private float connectionWidth = 0.05f;
+        [SerializeField]
+        [Tooltip("Ativa a visualização de debug geral")]
+        private bool showDebugGrid = true;
+
+        [SerializeField]
+        [Tooltip("Mostra os nós da malha no modo debug")]
+        private bool showNodes = true;
+
+        [SerializeField]
+        [Tooltip("Mostra as conexões entre os nós no modo debug")]
+        private bool showConnections = true;
+
+        [SerializeField]
+        [Tooltip("Mostra as bordas da área navegável")]
+        private bool showBounds = true;
+
+        [SerializeField]
+        [Tooltip("Cor das bordas da área navegável")]
+        private Color boundsColor = new Color(1f, 1f, 0f, 0.3f);
+
+        [SerializeField]
+        [Tooltip("Largura base das conexões (será ajustada pelo sistema de escala)")]
+        private float connectionWidth = 0.05f;
+
+        [Header("Size Adjustment")]
+         [SerializeField]
+        [Tooltip("Ativa o ajuste automático do tamanho dos elementos visuais baseado no tamanho do mapa")]
+        private bool autoAdjustSize = true;
+
+        [SerializeField]
+        [Tooltip("Multiplicador geral para ajuste fino do tamanho dos elementos visuais")]
+        private float sizeMultiplier = 1f;
+
+        [SerializeField]
+        [Tooltip("Tamanho base do mapa considerado 'normal' (em unidades). Mapas menores terão elementos maiores e vice-versa")]
+        private float referenceMapSize = 10f; // Tamanho de referência para um mapa "normal"
+        private float mapScaleFactor = 1f;
 
         private Dictionary<Vector2Int, NavigationNode> navigationGrid;
         private Bounds mapBounds;
@@ -80,6 +134,8 @@ namespace UnknownPlanet.Navigation
             {
                 LoadGridData();
             }
+
+            CalculateMapScale();
         }
 
         private void SetupVisualizer()
@@ -87,8 +143,8 @@ namespace UnknownPlanet.Navigation
             var visualizer = new GameObject("PathVisualizer");
             visualizer.transform.SetParent(transform);
             pathVisualizer = visualizer.AddComponent<LineRenderer>();
-            pathVisualizer.startWidth = pathLineWidth;
-            pathVisualizer.endWidth = pathLineWidth;
+            pathVisualizer.startWidth = pathLineWidth * mapScaleFactor;
+            pathVisualizer.endWidth = pathLineWidth * mapScaleFactor;
             pathVisualizer.material = new Material(Shader.Find("Sprites/Default"));
             pathVisualizer.startColor = pathColor;
             pathVisualizer.endColor = pathColor;
@@ -105,28 +161,54 @@ namespace UnknownPlanet.Navigation
             mapBounds = collider.bounds;
             navigationGrid = new Dictionary<Vector2Int, NavigationNode>();
 
-            for (float x = mapBounds.min.x; x <= mapBounds.max.x; x += gridSpacing)
+            // Aumentar a densidade de pontos de verificação
+            float halfSpacing = gridSpacing * 0.5f;
+            
+            for (float x = mapBounds.min.x; x <= mapBounds.max.x; x += halfSpacing)
             {
-                for (float y = mapBounds.min.y; y <= mapBounds.max.y; y += gridSpacing)
+                for (float y = mapBounds.min.y; y <= mapBounds.max.y; y += halfSpacing)
                 {
                     Vector2 worldPos = new Vector2(x, y);
                     if (IsStrictlyWalkable(worldPos))
                     {
                         Vector2Int gridPos = WorldToGridPosition(worldPos);
-                        navigationGrid[gridPos] = new NavigationNode(worldPos);
+                        if (!navigationGrid.ContainsKey(gridPos))
+                        {
+                            navigationGrid[gridPos] = new NavigationNode(worldPos);
+                        }
                     }
                 }
             }
 
             ConnectNodes();
+            CleanupIsolatedNodes();
         }
 
         private bool IsStrictlyWalkable(Vector2 position)
         {
-            if (!walkableArea.GetComponent<Collider2D>().OverlapPoint(position))
+            var walkableCollider = walkableArea.GetComponent<Collider2D>();
+            
+            // Primeiro, verifica se o ponto está dentro da área walkable
+            if (!walkableCollider.OverlapPoint(position))
                 return false;
 
-            // Verifica margem de segurança das bordas e obstáculos
+            // Verifica se há pontos ao redor também dentro da área walkable
+            float checkRadius = gridSpacing * 0.5f;
+            Vector2[] checkPoints = new Vector2[]
+            {
+                position + Vector2.up * checkRadius,
+                position + Vector2.down * checkRadius,
+                position + Vector2.left * checkRadius,
+                position + Vector2.right * checkRadius
+            };
+
+            foreach (var point in checkPoints)
+            {
+                if (!walkableCollider.OverlapPoint(point))
+                    return false;
+            }
+
+            // Verifica distância dos obstáculos
             foreach (var obstacle in obstacles)
             {
                 if (obstacle != null)
@@ -137,14 +219,30 @@ namespace UnknownPlanet.Navigation
                         float distance = Vector2.Distance(position, 
                             obstacleCollider.ClosestPoint(position));
                         if (distance < safetyMargin)
-                        {
                             return false;
-                        }
                     }
                 }
             }
 
             return true;
+        }
+
+        private void CleanupIsolatedNodes()
+        {
+            var nodesToRemove = new HashSet<Vector2Int>();
+
+            foreach (var pair in navigationGrid)
+            {
+                if (pair.Value.Connections.Count == 0)
+                {
+                    nodesToRemove.Add(pair.Key);
+                }
+            }
+
+            foreach (var key in nodesToRemove)
+            {
+                navigationGrid.Remove(key);
+            }
         }
 
         public List<Vector2> FindPath(Vector2 start, Vector2 end)
@@ -261,16 +359,29 @@ namespace UnknownPlanet.Navigation
         private bool IsPathSafe(Vector2 start, Vector2 end)
         {
             float distance = Vector2.Distance(start, end);
-            // Mais pontos de verificação para maior precisão
-            int checks = Mathf.CeilToInt(distance / (gridSpacing * 0.25f));
+            int checks = Mathf.Max(10, Mathf.CeilToInt(distance / (gridSpacing * 0.1f)));
             
+            // Verificar se os pontos inicial e final estão dentro da área
+            if (!IsStrictlyWalkable(start) || !IsStrictlyWalkable(end))
+                return false;
+
+            Vector2 pathDirection = (end - start).normalized;
+            float checkDistance = safetyMargin * 0.5f;
+
             for (int i = 0; i <= checks; i++)
             {
                 Vector2 point = Vector2.Lerp(start, end, i / (float)checks);
-                if (!IsStrictlyWalkable(point))
+                Vector2 perpendicular = Vector2.Perpendicular(pathDirection) * checkDistance;
+
+                // Verificar o ponto central e pontos laterais
+                if (!IsStrictlyWalkable(point) || 
+                    !IsStrictlyWalkable(point + perpendicular) || 
+                    !IsStrictlyWalkable(point - perpendicular))
+                {
                     return false;
+                }
             }
-            
+
             return true;
         }
 
@@ -368,13 +479,16 @@ namespace UnknownPlanet.Navigation
 
             if (navigationGrid == null) return;
 
+            float adjustedNodeSize = nodeSize * mapScaleFactor;
+            float adjustedConnectionWidth = connectionWidth * mapScaleFactor;
+
             // Draw nodes and connections
             foreach (var node in navigationGrid.Values)
             {
                 if (showNodes)
                 {
                     Gizmos.color = nodeColor;
-                    Gizmos.DrawSphere((Vector3)node.WorldPosition, nodeSize);
+                    Gizmos.DrawSphere((Vector3)node.WorldPosition, adjustedNodeSize);
                 }
 
                 if (showConnections)
@@ -386,7 +500,7 @@ namespace UnknownPlanet.Navigation
                         Vector3 startPos = (Vector3)node.WorldPosition;
                         Vector3 endPos = (Vector3)connection.WorldPosition;
                         Vector3 direction = endPos - startPos;
-                        Vector3 perpendicular = Vector3.Cross(direction, Vector3.forward).normalized * connectionWidth;
+                        Vector3 perpendicular = Vector3.Cross(direction, Vector3.forward).normalized * adjustedConnectionWidth;
                         
                         Gizmos.DrawLine(
                             startPos + perpendicular,
@@ -407,9 +521,9 @@ namespace UnknownPlanet.Navigation
                 for (int i = 0; i < currentDebugPath.Count - 1; i++)
                 {
                     Gizmos.DrawLine((Vector3)currentDebugPath[i], (Vector3)currentDebugPath[i + 1]);
-                    Gizmos.DrawWireSphere((Vector3)currentDebugPath[i], nodeSize * 1.5f);
+                    Gizmos.DrawWireSphere((Vector3)currentDebugPath[i], adjustedNodeSize * 1.5f);
                 }
-                Gizmos.DrawWireSphere((Vector3)currentDebugPath[currentDebugPath.Count - 1], nodeSize * 1.5f);
+                Gizmos.DrawWireSphere((Vector3)currentDebugPath[currentDebugPath.Count - 1], adjustedNodeSize * 1.5f);
             }
         }
 
@@ -483,6 +597,15 @@ namespace UnknownPlanet.Navigation
                     pathVisualizer.positionCount = 0;
                 }
             }
+        }
+
+        private void CalculateMapScale()
+        {
+            if (!autoAdjustSize || walkableArea == null) return;
+
+            var bounds = walkableArea.GetComponent<Collider2D>().bounds;
+            float mapSize = Mathf.Max(bounds.size.x, bounds.size.y);
+            mapScaleFactor = (referenceMapSize / mapSize) * sizeMultiplier;
         }
     }
 }
