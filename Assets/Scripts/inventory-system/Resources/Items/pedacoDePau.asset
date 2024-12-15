@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ca3f85bf8449b346b004b61516ce209, type: 3}
+  m_Name: pedacoDePau
+  m_EditorClassIdentifier: 
+  id: 0
+  itemName: "Peda\xE7o de pau"
+  icon: {fileID: 21300000, guid: 5ecf743d8306c6049896944bdc510653, type: 3}
+  description: "Usado para descer o cacete em z\xE9 ruela"
+  isStackable: 0
+  maxStackSize: 64
+  price: 5
+  type: 0
+  rarity: 0
+  hpRecovery: 0
+  mpRecovery: 0
+  staminaRecovery: 0
+  strength: 0
+  dexterity: 0
+  MagicPower: 0
+  vitality: 0
+  defense: 0
+  hasBoost: 0
+  boostEffect: 
+  boostDuration: 0
+  unlocksContent: 0
+  unlockableContent: 
+  attack: 3
+  attackBoost: 0
+  strengthBoost: 0
+  defenseBoost: 0
+  criticalChanceBoost: 0
+  agilityBoost: 0
+  magicPowerBoost: 0

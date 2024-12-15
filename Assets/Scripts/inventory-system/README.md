@@ -1,35 +1,65 @@
-# Contents of README.md
+# Sistema de Inventário
 
-# Inventory System
+Este projeto implementa um sistema de inventário para um jogo, permitindo que os jogadores gerenciem itens de forma eficiente.
 
-This project implements an inventory system for a game, allowing players to manage items effectively. 
+## Funcionalidades
 
-## Features
+- **Gerenciamento de Itens**: Adiciona, remove e empilha itens no inventário.
+- **Tipos de Itens**: Suporta vários tipos de itens incluindo Saque, Material, Moeda, Arma e Armadura.
+- **Raridade de Itens**: Categoriza itens em diferentes níveis de raridade como Normal, Raro e Lendário.
+- **Scriptable Objects**: Utiliza ScriptableObjects para fácil gerenciamento de dados de itens no Unity.
+- **Interface do Usuário**: Fornece uma interface amigável para gerenciamento do inventário.
+- **Sistema de Equipamento**: Permite que jogadores equipem e desequipem itens, afetando as estatísticas do jogador.
+- **Sistema de Buff**: Aplica buffs e debuffs baseados nos efeitos dos itens.
 
-- **Item Management**: Add, remove, and stack items in the inventory.
-- **Item Types**: Supports various item types including Loot, Material, Coin, Weapon, and Armor.
-- **Item Rarity**: Categorizes items into different rarity levels such as Normal, Rare, and Legendary.
-- **Scriptable Objects**: Utilizes ScriptableObjects for easy item data management in Unity.
-- **User Interface**: Provides a user-friendly interface for inventory management.
-- **Equipment System**: Allows players to equip and unequip items, affecting player stats.
-- **Buff System**: Applies buffs and debuffs based on item effects.
+## Componentes Principais
 
-## File Structure
+### 1. Sistema Base de Itens
+- Classe `Item` define todas as propriedades dos itens (recuperação de HP/MP, aumento de status, etc)
+- `ItemData` ScriptableObject permite criar itens no Inspector do Unity
+- `ItemType` e `ItemRarity` são enums que definem tipos e raridades
 
-- **Scripts/Core**: Contains core classes for inventory management.
-- **Scripts/Enums**: Defines enumerations for item types and rarity.
-- **Scripts/ScriptableObjects**: Manages item data as ScriptableObjects.
-- **Scripts/UI**: Handles the user interface for inventory and item slots.
-- **Scripts/Systems**: Manages equipment, buffs, and item effects.
-- **Resources/Items**: Contains item data files.
+### 2. Sistema de Inventário
+- `Inventory` gerencia slots e itens
+- Suporta empilhamento de itens (até 64 por slot) quando `IsPiled = true`
+- Fornece métodos `AddItem()` e `RemoveItem()`
+- `ItemDatabase` mantém registro de todos os itens do jogo
 
-## Getting Started
+### 3. Sistema de Equipamentos
+- `EquipmentSystem` gerencia itens equipados
+- Controla equipamentos por tipo (armas, armaduras, etc)
+- Gerencia itens na mão secundária
+- Atualiza stats do jogador ao equipar/desequipar
 
-1. Clone the repository.
-2. Open the project in Unity.
-3. Import the necessary assets.
-4. Run the game to test the inventory system.
+### 4. Sistema de Buffs
+- `BuffSystem` gerencia buffs temporários
+- Aplica/remove efeitos de itens consumíveis
+- Controla duração dos buffs
+- `ItemEffectHandler` processa os efeitos dos itens
 
-## License
+### 5. Interface do Usuário
+- `InventoryUI` mostra os slots e itens visualmente
+- Permite interação com os itens (usar, equipar, etc)
+- Atualiza automaticamente quando o inventário muda
 
-This project is licensed under the MIT License.
+Todos os componentes se integram com `PlayerStats` para modificar os atributos do jogador conforme necessário.
+
+## Estrutura de Arquivos
+
+- **Scripts/Core**: Contém classes principais para gerenciamento de inventário.
+- **Scripts/Enums**: Define enumerações para tipos e raridade de itens.
+- **Scripts/ScriptableObjects**: Gerencia dados de itens como ScriptableObjects.
+- **Scripts/UI**: Manipula a interface do usuário para inventário e slots de itens.
+- **Scripts/Systems**: Gerencia equipamentos, buffs e efeitos de itens.
+- **Resources/Items**: Contém arquivos de dados dos itens.
+
+## Como Começar
+
+1. Clone o repositório.
+2. Abra o projeto no Unity.
+3. Importe os assets necessários.
+4. Execute o jogo para testar o sistema de inventário.
+
+## Licença
+
+Este projeto está licenciado sob a Licença MIT.

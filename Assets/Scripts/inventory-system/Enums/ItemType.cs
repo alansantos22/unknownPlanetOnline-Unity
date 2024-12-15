@@ -1,0 +1,37 @@
+namespace InventorySystem.Enums
+{
+    public enum ItemType
+    {
+        Weapon,
+        Armor,
+        Gauntlet,
+        Boots,
+        Helmet,
+        Ring,
+        Necklace,
+        Mount,
+        Pet,
+        Potion,
+        Loot,
+        Quest,
+        Junk,
+        Material,
+        Currency,
+        Blueprint,
+        Scroll,
+        Book,
+        Key,
+        Food,
+        Drink,
+        Crafting,
+        Tool,
+        Container,
+        Furniture,
+        Toy,
+        Gift,
+        Cosmetic,
+        Event,
+        Ticket,
+        Token
+    }
+}

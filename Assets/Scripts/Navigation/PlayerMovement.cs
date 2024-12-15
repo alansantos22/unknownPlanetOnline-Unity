@@ -68,6 +68,7 @@ namespace GoPath
         private LineRenderer targetLine;
         private IMovementBlocker[] blockers;
         private bool isMovementBlocked;
+        private PlayerStats playerStats;
 
         private void Start()
         {
@@ -103,6 +104,12 @@ namespace GoPath
             rb.gravityScale = 0f;
             rb.freezeRotation = true;
             mainCamera = Camera.main;
+
+            playerStats = GetComponent<PlayerStats>();
+            if (playerStats == null)
+            {
+                LogError("PlayerStats não encontrado no objeto!");
+            }
 
             if (gridManager == null)
             {
@@ -210,8 +217,9 @@ namespace GoPath
         {
             float distanceToTarget = Vector2.Distance(current, target);
             Vector2 direction = (target - current).normalized;
+            float adjustedSpeed = moveSpeed * (playerStats != null ? playerStats.timeTravel : 1f);
 
-            if (distanceToTarget < moveSpeed * Time.deltaTime)
+            if (distanceToTarget < adjustedSpeed * Time.deltaTime)
             {
                 transform.position = target;
                 rb.velocity = Vector2.zero;
@@ -219,7 +227,7 @@ namespace GoPath
             else
             {
                 // Usar MovePosition para movimento mais preciso
-                rb.MovePosition(current + direction * moveSpeed * Time.deltaTime);
+                rb.MovePosition(current + direction * adjustedSpeed * Time.deltaTime);
             }
 
             if (showPathInGame)
