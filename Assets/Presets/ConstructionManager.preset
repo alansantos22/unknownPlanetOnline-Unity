@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!181963792 &2655988077585873504
+Preset:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ConstructionManager
+  m_TargetType:
+    m_NativeTypeID: 114
+    m_ManagedTypePPtr: {fileID: 11500000, guid: 70e5929abd245cd47a073c38be5385c8, type: 3}
+    m_ManagedTypeFallback: 
+  m_Properties:
+  - target: {fileID: 0}
+    propertyPath: m_Enabled
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_EditorHideFlags
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_EditorClassIdentifier
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: constructionUIPrefab
+    value: 
+    objectReference: {fileID: 7926462029906612630, guid: d05f49e366166d843806155a71cd91a4, type: 3}
+  - target: {fileID: 0}
+    propertyPath: gameCanvas
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: constructionParent
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: player
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: biomeMapRenderer
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: mapGenerator
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: cameraController
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: fogOfWar
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: cityPrefab
+    value: 
+    objectReference: {fileID: 644158447364673725, guid: a029757769137fd4a849061224b69a6e, type: 3}
+  - target: {fileID: 0}
+    propertyPath: villagePrefab
+    value: 
+    objectReference: {fileID: 644158447364673725, guid: 5061897574f890b4588717983f857bbc, type: 3}
+  - target: {fileID: 0}
+    propertyPath: farmPrefab
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: minePrefab
+    value: 
+    objectReference: {fileID: 644158447364673725, guid: b13bc87ff144e484f9217010a060bd8c, type: 3}
+  - target: {fileID: 0}
+    propertyPath: buildKey
+    value: 98
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: mapLayer.m_Bits
+    value: 256
+    objectReference: {fileID: 0}
+  m_ExcludedProperties: []
